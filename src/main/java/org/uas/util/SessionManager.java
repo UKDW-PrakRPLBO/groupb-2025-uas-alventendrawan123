@@ -1,45 +1,51 @@
 package org.uas.util;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 public class SessionManager implements Serializable {
-    private static final String SESSION_FILE = "session.ser";
-
     private static SessionManager instance;
     private boolean isLoggedIn = false;
+    private static final String FILE_NAME = "session.ser";
 
-    // Static method to get the singleton instance
+    private SessionManager() {
+        loadSession();
+    }
+
     public static SessionManager getInstance() {
-        return new SessionManager();
+        if (instance == null) {
+            instance = new SessionManager();
+        }
+        return instance;
     }
 
-    // Method to check if the session file doesn't exist
-    public void createSessionFile() {
-
+    public void login() {
+        isLoggedIn = true;
+        saveSession();
     }
 
-    private void loadSession() {
-
+    public void logout() {
+        isLoggedIn = false;
+        saveSession();
     }
 
-    private void saveSession() {
-
-    }
-
-    // Method to check if user is logged in
     public boolean isLoggedIn() {
         return isLoggedIn;
     }
 
-    // Method to simulate login
-    public void login() {
-
+    private void saveSession() {
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(FILE_NAME))) {
+            out.writeObject(this);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    // Method to simulate logout
-    public void logout() {
-
+    private void loadSession() {
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(FILE_NAME))) {
+            SessionManager saved = (SessionManager) in.readObject();
+            this.isLoggedIn = saved.isLoggedIn;
+        } catch (IOException | ClassNotFoundException e) {
+            this.isLoggedIn = false;
+        }
     }
 }

@@ -1,30 +1,13 @@
 package org.uas.data;
 
 public class User {
-    private String email; //should be unique
+    private String email;
     private String username;
     private String password;
 
     public User(String email, String username, String password) {
-        this.setEmail(email);
-        this.setUsername(username);
-        this.setPassword(password);
-    }
-
-    // Getters and setters
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
+        this.email = email;
         this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
         this.password = password;
     }
 
@@ -32,7 +15,11 @@ public class User {
         return email;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
     }
 }

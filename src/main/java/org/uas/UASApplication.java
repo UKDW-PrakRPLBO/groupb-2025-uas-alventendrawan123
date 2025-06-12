@@ -1,130 +1,95 @@
 package org.uas;
 
 import org.uas.data.User;
-import org.uas.repository.*;
+import org.uas.repository.UserRepository;
 import org.uas.util.DBConnectionManager;
 import org.uas.util.SessionManager;
 
+import java.sql.Connection;
 import java.util.List;
 import java.util.Scanner;
 
 public class UASApplication {
-    UserRepository userRepository;
-    private boolean isLogin = false;
-
-    public UASApplication() {
-        userRepository = new UserRepository(DBConnectionManager.getConnection());
-    }
-
-    public void start() {
+    public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        while (true) {
-            isLogin = SessionManager.getInstance().isLoggedIn();
-            System.out.println("UAS");
-            System.out.println("0. Exit");
-            if (isLogin) {
-                System.out.println("2. Tampilkan Semua User");
-                System.out.println("3. Tambah User ");
-                System.out.println("4. Ubah User");
-                System.out.println("5. Hapus User");
-                System.out.println("6. Logout");
-            } else {
-                System.out.println("1. Login");
-            }
-            System.out.print("Tentukan Pilihan: ");
+        Connection conn = DBConnectionManager.getConnection();
+        UserRepository userRepo = new UserRepository(conn);
+        SessionManager session = SessionManager.getInstance();
 
-            int choice = 99;
+        if (!session.isLoggedIn()) {
+            System.out.print("Username: ");
+            String uname = scanner.nextLine();
+            System.out.print("Password: ");
+            String pwd = scanner.nextLine();
             try {
-                choice = Integer.parseInt(scanner.next());
-                if (!isLogin) {
-                    if (choice > 1) {
-                        choice = -99;
-                    }
+                if (userRepo.authenticateUser(uname, pwd)) {
+                    System.out.println("Login berhasil");
+                    session.login();
+                } else {
+                    System.out.println("Login gagal");
+                    return;
                 }
-            } catch (NumberFormatException | NullPointerException e) {
-                System.out.print("Pilihan harus berupa angka!\n");
-            }
-            switch (choice) {
-                case 0:
-                    exitApps();
-                    break;
-                case 1:
-                    login(scanner);
-                    break;
-                case 2:
-                    tampilkanSemuaUser();
-                    break;
-                case 3:
-                    insertUser(scanner);
-                    break;
-                case 4:
-                    updateUser(scanner);
-                    break;
-                case 5:
-                    deleteUser(scanner);
-                    break;
-                case 6:
-                    logout();
-                    break;
-
-                case -99:
-                    System.out.println("Anda Belum Login.");
-                default:
-                    System.out.println("Pilihan tidak sesuai. Coba lagi.");
+            } catch (Exception e) {
+                e.printStackTrace();
+                return;
             }
         }
-    }
 
-    private void logout() {
-        SessionManager.getInstance().logout();
-    }
+        boolean running = true;
+        while (running) {
+            System.out.println("\n1. Lihat Semua");
+            System.out.println("2. Tambah");
+            System.out.println("3. Ubah");
+            System.out.println("4. Hapus");
+            System.out.println("5. Logout");
+            System.out.println("0. Keluar");
+            System.out.print("Pilih: ");
+            String pilih = scanner.nextLine();
 
-    private void deleteUser(Scanner scanner) {
-        scanner.skip("\\R?");
-        System.out.print("Masukan email user yang akan dihapus: ");
-        String email = scanner.nextLine();
+            try {
+                switch (pilih) {
+                    case "1" -> {
+                        List<User> users = userRepo.findAll();
+                        for (User u : users) {
+                            System.out.println(u.getEmail() + " - " + u.getUsername());
+                        }
+                    }
+                    case "2" -> {
+                        System.out.print("Email: ");
+                        String email = scanner.nextLine();
+                        System.out.print("Username: ");
+                        String username = scanner.nextLine();
+                        System.out.print("Password: ");
+                        String pass = scanner.nextLine();
+                        userRepo.insertUser(email, username, pass);
+                    }
+                    case "3" -> {
+                        System.out.print("Email: ");
+                        String email = scanner.nextLine();
+                        System.out.print("Username Baru: ");
+                        String username = scanner.nextLine();
+                        System.out.print("Password Baru: ");
+                        String pass = scanner.nextLine();
+                        userRepo.updateUser(email, username, pass);
+                    }
+                    case "4" -> {
+                        System.out.print("Email: ");
+                        String email = scanner.nextLine();
+                        userRepo.deleteUser(email);
+                    }
+                    case "5" -> {
+                        session.logout();
+                        System.out.println("Logout berhasil");
+                        running = false;
+                    }
+                    case "0" -> running = false;
+                    default -> System.out.println("Pilihan tidak valid");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
-    }
-
-    private void updateUser(Scanner scanner) {
-        scanner.skip("\\R?");
-        System.out.print("Masukan email user yang akan diupdate: ");
-        String email = scanner.nextLine();
-        System.out.print("Masukan username baru: ");
-        String username = scanner.nextLine();
-        System.out.print("Masukan password baru: ");
-        String password = scanner.nextLine();
-    }
-
-    private void tampilkanSemuaUser() {
-
-    }
-
-    private void exitApps() {
-        System.out.println("Keluar aplikasi. Goodbye!");
-        System.exit(0);
-    }
-
-    private void login(Scanner scanner) {
-        scanner.skip("\\R?");
-        System.out.print("Enter username: ");
-        String username = scanner.nextLine();
-        System.out.print("Enter password: ");
-        String password = scanner.nextLine();
-    }
-
-    private void insertUser(Scanner scanner) {
-        scanner.skip("\\R?");
-        System.out.print("Enter email: ");
-        String email = scanner.nextLine();
-        System.out.print("Enter username: ");
-        String username = scanner.nextLine();
-        System.out.print("Enter password: ");
-        String password = scanner.nextLine();
-    }
-
-    public static void main(String[] args) {
-        UASApplication uasApplication = new UASApplication();
-        uasApplication.start();
+        DBConnectionManager.closeConnection();
     }
 }

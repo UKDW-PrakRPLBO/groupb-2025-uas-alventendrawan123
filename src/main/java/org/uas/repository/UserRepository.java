@@ -11,50 +11,50 @@ public class UserRepository {
 
     public UserRepository(Connection connection) {
         this.connection = connection;
-        createTable();
     }
 
-    public void createTable() {
-        // Create database tables if they don't exist
-        // Implement this method to create tables for users, courses, classes, and attendance records
-        String userTableSql = "CREATE TABLE IF NOT EXISTS users ("
-                + "email TEXT NOT NULL PRIMARY KEY,"
-                + "username TEXT NOT NULL UNIQUE,"
-                + "password TEXT NOT NULL"
-                + ")";
-        if (connection != null) {
-            try (Statement stmt = connection.createStatement()) {
-                stmt.execute(userTableSql);
-                // Execute more table creation statements as needed
-            } catch (SQLException e) {
-                System.out.println(e.getMessage());
-                // Handle table creation error
-            }
+    public boolean insertUser(String email, String username, String password) throws SQLException {
+        String query = "INSERT INTO users (email, username, password) VALUES (?, ?, ?)";
+        PreparedStatement stmt = connection.prepareStatement(query);
+        stmt.setString(1, email);
+        stmt.setString(2, username);
+        stmt.setString(3, password);
+        return stmt.executeUpdate() > 0;
+    }
+
+    public boolean updateUser(String email, String username, String password) throws SQLException {
+        String query = "UPDATE users SET username = ?, password = ? WHERE email = ?";
+        PreparedStatement stmt = connection.prepareStatement(query);
+        stmt.setString(1, username);
+        stmt.setString(2, password);
+        stmt.setString(3, email);
+        return stmt.executeUpdate() > 0;
+    }
+
+    public boolean deleteUser(String email) throws SQLException {
+        String query = "DELETE FROM users WHERE email = ?";
+        PreparedStatement stmt = connection.prepareStatement(query);
+        stmt.setString(1, email);
+        return stmt.executeUpdate() > 0;
+    }
+
+    public List<User> findAll() throws SQLException {
+        List<User> users = new ArrayList<>();
+        String query = "SELECT * FROM users";
+        Statement stmt = connection.createStatement();
+        ResultSet rs = stmt.executeQuery(query);
+        while (rs.next()) {
+            users.add(new User(rs.getString("email"), rs.getString("username"), rs.getString("password")));
         }
-    }
-
-    public List<User> findAll() {
-        ArrayList<User> users = new ArrayList<>();
-
         return users;
     }
 
-    public boolean authenticateUser(String username, String password) {
-        return false;
-    }
-
-    public boolean insertUser(String email, String username, String password) {
-
-        return false;
-
-    }
-
-    public boolean updateUser(String email, String username, String password) {
-        return false;
-    }
-
-    public boolean deleteUser(String email) {
-        return false;
+    public boolean authenticateUser(String username, String password) throws SQLException {
+        String query = "SELECT * FROM users WHERE username = ? AND password = ?";
+        PreparedStatement stmt = connection.prepareStatement(query);
+        stmt.setString(1, username);
+        stmt.setString(2, password);
+        ResultSet rs = stmt.executeQuery();
+        return rs.next();
     }
 }
-
